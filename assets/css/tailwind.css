@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 2 100 81; /* #026451 */
+    --primary-hover: 1 62 50; /* #013e32 */
+		--light-accent: 204 224 220; /* #cce0dc */
+    --light-bg: 248 249 250; /* #f8f9fa */
+    --dark-text: 33 37 41; /* #212529 */
+    --light-text: 233 232 231; /* #e9e8e7 */
+    --border-radius: 6px;
+  }
+
+  html {
+    font-family: 'Montserrat', sans-serif;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md transition-all duration-300 font-medium;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary-hover border-2 border-primary hover:border-primary-hover;
+  }
+
+  .btn-secondary {
+    @apply btn bg-light-bg text-primary border-2 border-primary;
+  }
+
+  .nav-link {
+    @apply text-dark-text hover:text-primary transition-colors duration-300;
+  }
+
+  .dropdown-content {
+    @apply hidden group-hover:block absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50;
+  }
+
+  .dropdown-item {
+    @apply block px-4 py-2 text-sm text-dark-text hover:bg-light-bg hover:text-primary transition-colors duration-200;
+  }
+  
+  /* Global component width class */
+  .component-container {
+    @apply max-w-5xl mx-auto w-full;
+  }
+}

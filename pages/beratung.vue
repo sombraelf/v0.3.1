@@ -233,7 +233,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, onMounted } from 'vue';
 import { 
   ChatBubbleLeftRightIcon, 
   UserIcon, 
@@ -291,7 +291,14 @@ const sendMessage = async () => {
     const response = await query({ question: userMessage });
     
     // Add AI response to chat
-    messages.value.push({ text: response.text || "Entschuldigung, ich konnte keine Antwort generieren. Bitte versuchen Sie es erneut.", isUser: false });
+    if (response && response.text) {
+      messages.value.push({ text: response.text, isUser: false });
+    } else {
+      messages.value.push({ 
+        text: "Entschuldigung, ich konnte keine Antwort generieren. Bitte versuchen Sie es erneut.", 
+        isUser: false 
+      });
+    }
   } catch (error) {
     console.error('Error querying Flowise API:', error);
     messages.value.push({ 
@@ -311,18 +318,29 @@ const sendMessage = async () => {
 
 // Flowise API query function
 async function query(data) {
-  const response = await fetch(
-    "https://flowise.maximilianpaszke.de/api/v1/prediction/b52a4ca7-de36-4b7c-9b27-4b44bd252687",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
+  try {
+    const response = await fetch(
+      "https://flowise.maximilianpaszke.de/api/v1/prediction/b52a4ca7-de36-4b7c-9b27-4b44bd252687",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
     }
-  );
-  const result = await response.json();
-  return result;
+    
+    const result = await response.json();
+    console.log("API Response:", result);
+    return result;
+  } catch (error) {
+    console.error("API Error:", error);
+    throw error;
+  }
 }
 
 // Auto-scroll when messages change

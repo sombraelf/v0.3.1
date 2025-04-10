@@ -77,13 +77,13 @@
         </nav>
 
         <div class="hidden lg:flex lg:items-center lg:space-x-2 xl:space-x-3">
-          <NuxtLink
-            to="/beratung"
+          <button
+            @click="openChat"
             class="btn-secondary text-xs xl:text-sm inline-flex items-center hover:bg-primary/10 transition-colors duration-300"
           >
             <ChatBubbleLeftIcon class="h-4 w-4 mr-1" />
             Beratung erhalten
-          </NuxtLink>
+          </button>
 
           <NuxtLink
             to="/angebote"
@@ -148,13 +148,13 @@
         </NuxtLink>
 
         <div class="pt-2 space-y-2">
-          <NuxtLink
-            to="/beratung"
+          <button
+            @click="openChat"
             class="block w-full text-center btn-secondary text-sm inline-flex items-center justify-center hover:bg-primary/10 transition-colors duration-300"
-            @click="closeMobileMenu" >
+          >
             <ChatBubbleLeftIcon class="h-4 w-4 mr-1" />
             Beratung erhalten
-          </NuxtLink>
+          </button>
 
           <NuxtLink
             to="/angebote"
@@ -169,7 +169,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 import { Bars3Icon, XMarkIcon, ChevronDownIcon, ChatBubbleLeftIcon } from '@heroicons/vue/24/outline'
 
 // --- Original Refs ---
@@ -179,6 +179,9 @@ const isServicesHovered = ref(false)
 
 // --- NEU: Ref für den Desktop-Dropdown-Timeout ---
 const servicesMenuTimeout = ref(null)
+
+// --- NEU: Inject der Chat-Steuerungsfunktion ---
+const chatStore = inject('chatStore')
 
 // --- NEU: Funktionen für Desktop-Dropdown Hover-Logik ---
 const handleServicesMouseEnter = () => {
@@ -204,11 +207,18 @@ const closeServicesMenu = () => {
     isServicesHovered.value = false;
 }
 
-
 // --- NEU: Funktion zum Schließen des mobilen Menüs (nach Klick) ---
 const closeMobileMenu = () => {
     isOpen.value = false;
     // Optional: auch das mobile Submenu schließen
     // isServicesMobileOpen.value = false;
+}
+
+// --- NEU: Funktion zum Öffnen des Chat-Fensters ---
+const openChat = () => {
+  if (chatStore) {
+    chatStore.openChat();
+    closeMobileMenu();
+  }
 }
 </script>

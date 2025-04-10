@@ -15,7 +15,7 @@
       v-show="isOpen"
       class="fixed bottom-24 right-6 w-[calc(100%-3rem)] sm:w-80 md:w-96 bg-white rounded-lg shadow-xl z-50 overflow-hidden transition-all duration-300 flex flex-col"
       :class="{ 'translate-y-0 opacity-100': isOpen, 'translate-y-8 opacity-0': !isOpen }"
-      style="max-height: 70vh; max-width: 24rem;"
+      style="max-height: 70vh; max-width: 24rem; left: auto;"
     >
       <!-- Chat Header -->
       <div class="bg-primary text-white p-4 flex justify-between items-center">
@@ -119,7 +119,7 @@
             v-model="userInput"
             type="text"
             placeholder="Ihre Frage eingeben..."
-            class="flex-grow border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            class="flex-grow border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent h-[38px]"
             :disabled="isLoading"
           />
           <button
@@ -136,7 +136,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, onMounted, provide } from 'vue';
 import { 
   ChatBubbleLeftRightIcon, 
   XMarkIcon, 
@@ -159,12 +159,26 @@ onMounted(() => {
   if (savedConsent === 'true') {
     hasConsented.value = true;
   }
+  
+  // Test API connection on mount
+  testApiConnection();
 });
 
 // Toggle chat window
 const toggleChat = () => {
   isOpen.value = !isOpen.value;
 };
+
+// Open chat window (for external components)
+const openChat = () => {
+  isOpen.value = true;
+};
+
+// Provide chat control to other components
+provide('chatStore', {
+  openChat,
+  isOpen
+});
 
 // Give consent to data processing
 const giveConsent = () => {
@@ -175,6 +189,36 @@ const giveConsent = () => {
 // Format message with line breaks
 const formatMessage = (text) => {
   return text.replace(/\n/g, '<br>');
+};
+
+// Test API connection
+const testApiConnection = async () => {
+  try {
+    console.log("Testing API connection...");
+    const testResponse = await fetch(
+      "https://flowise.maximilianpaszke.de/api/v1/prediction/b52a4ca7-de36-4b7c-9b27-4b44bd252687",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ question: "Test connection" })
+      }
+    );
+    
+    console.log("API test status:", testResponse.status);
+    console.log("API test headers:", Object.fromEntries([...testResponse.headers]));
+    
+    if (!testResponse.ok) {
+      console.error("API test failed with status:", testResponse.status);
+      return;
+    }
+    
+    const testResult = await testResponse.json();
+    console.log("API test response:", testResult);
+  } catch (error) {
+    console.error("API test error:", error);
+  }
 };
 
 // Send message to Flowise API
@@ -196,11 +240,38 @@ const sendMessage = async () => {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
     
-    // Call Flowise API
-    const response = await query({ question: userMessage });
+    // Call Flowise API with CORS mode explicitly set
+    const response = await fetch(
+      "https://flowise.maximilianpaszke.de/api/v1/prediction/b52a4ca7-de36-4b7c-9b27-4b44bd252687",
+      {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({ question: userMessage })
+      }
+    );
+    
+    console.log("API response status:", response.status);
+    
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log("API Response:", result);
     
     // Add AI response to chat
-    messages.value.push({ text: response.text || "Entschuldigung, ich konnte keine Antwort generieren. Bitte versuchen Sie es erneut.", isUser: false });
+    if (result && result.text) {
+      messages.value.push({ text: result.text, isUser: false });
+    } else {
+      messages.value.push({ 
+        text: "Entschuldigung, ich konnte keine Antwort generieren. Bitte versuchen Sie es erneut.", 
+        isUser: false 
+      });
+    }
   } catch (error) {
     console.error('Error querying Flowise API:', error);
     messages.value.push({ 
@@ -217,22 +288,6 @@ const sendMessage = async () => {
     }
   }
 };
-
-// Flowise API query function
-async function query(data) {
-  const response = await fetch(
-    "https://flowise.maximilianpaszke.de/api/v1/prediction/b52a4ca7-de36-4b7c-9b27-4b44bd252687",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
-    }
-  );
-  const result = await response.json();
-  return result;
-}
 
 // Auto-scroll when messages change
 watch(messages, async () => {
